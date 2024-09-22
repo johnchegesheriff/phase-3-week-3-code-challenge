@@ -1,190 +1,216 @@
 import sqlite3
 
-conn = sqlite3.connect('concerts.db')
-cursor = conn.cursor()
+def create_database():
+    conn = sqlite3.connect('concerts.db')
+    cursor = conn.cursor()
 
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS venues (
-    title TEXT NOT NULL,
-    city TEXT NOT NULL)""")
-
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS bands (
-    title TEXT NOT NULL,
-    city TEXT NOT NULL)""")
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS bands (
+        name TEXT NOT NULL,
+        hometown TEXT NOT NULL
+    )
+    ''')
 
 
-cursor.execute("""
-CREATE TABLE concerts (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  band_id INTEGER,
-  venue_id INTEGER,
-  date TEXT,
-  FOREIGN KEY (band_id) REFERENCES bands(id),
-  FOREIGN KEY (venue_id) REFERENCES venues(id)
-);
-""")
-conn.commit()
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS venues (
+        title TEXT NOT NULL,
+        city TEXT NOT NULL
+    )
+    ''')
+
+    
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS concerts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        band_name TEXT,
+        venue_title TEXT,
+        date TEXT,
+        FOREIGN KEY(band_name) REFERENCES bands(name),
+        FOREIGN KEY(venue_title) REFERENCES venues(title)
+    )
+    ''')
+
+    #closing the connection
+    conn.commit()
+    conn.close()
 
 
+def insert_sample_data():
+    conn = sqlite3.connect('concerts.db')
+    cursor = conn.cursor()
 
-cursor.execute("INSERT INTO bands (name, hometown) VALUES (?, ?)", ("Uk swindlers", "Switzerland"))
-cursor.execute("INSERT INTO bands (name, hometown) VALUES (?, ?)", ("The Beatles", "Malawi"))
-cursor.execute("INSERT INTO venues (title, city) VALUES (?, ?)", ("Madison Square Garden", "New York City"))
-cursor.execute("INSERT INTO venues (title, city) VALUES (?, ?)", ("The O2 Arena", "London"))
-cursor.execute("INSERT INTO concerts (band_id, venue_id, date) VALUES (?, ?, ?)", (1, 1, "2024-10-26"))
-cursor.execute("INSERT INTO concerts (band_id, venue_id, date) VALUES (?, ?, ?)", (2, 2, "2024-11-12"))
-conn.commit()
+    cursor.execute("INSERT INTO bands (name, hometown) VALUES ('The Swindlers', 'Switzerland')")
+    cursor.execute("INSERT INTO venues (title, city) VALUES ('Gig Hall', 'New York')")
+    cursor.execute("INSERT INTO concerts (band_name, venue_title, date) VALUES ('The Swindlers', 'Gig Hall', '2024-09-01')")
 
-class Band:
-    def __init__(self, name, hometown):
-        self._name = name  
-        self._hometown = hometown  
-        self._concerts = []  
+    conn.commit()
+    conn.close()
 
-    @property
-    def name(self):
-        return self._name  
 
-    @name.setter
-    def name(self, value):
-        if isinstance(value, str) and len(value) > 0:  
-            self._name = value  
-        else:
-            ValueError("Name must be a non-empty string")  
+def get_band_for_concert(concert_id):
+    conn = sqlite3.connect('concerts.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT * FROM bands
+        JOIN concerts ON bands.name = concerts.band_name
+        WHERE concerts.id = ?
+    ''', (concert_id,))
+    band = cursor.fetchone()
+    conn.close()
+    return band
 
-    @property
-    def hometown(self):
-        return self._hometown  
 
-    @hometown.setter
-    def hometown(self, value):
-        if isinstance(value, str) and len(value) > 0: 
-            self._hometown = value  
-        else:
-            ValueError("Hometown must be a non-empty string")  
+def get_venue_for_concert(concert_id):
+    conn = sqlite3.connect('concerts.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT * FROM venues
+        JOIN concerts ON venues.title = concerts.venue_title
+        WHERE concerts.id = ?
+    ''', (concert_id,))
+    venue = cursor.fetchone()
+    conn.close()
+    return venue
 
-    def add_concert(self, concert):
-        if concert not in self._concerts:
-            self._concerts.append(concert)  
 
-    def concerts(self):
-        return self._concerts  
+def get_concerts_for_venue(venue_title):
+    conn = sqlite3.connect('concerts.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT * FROM concerts
+        WHERE venue_title = ?
+    ''', (venue_title,))
+    concerts = cursor.fetchall()
+    conn.close()
+    return concerts
 
-    def venues(self):
-        return list({concert.venue for concert in self._concerts if isinstance(concert.venue, Venue)})  
 
-    def play_in_venue(self, venue, date):
-        concert = Concert(date=date, band=self, venue=venue)  
-        self.add_concert(concert)  
-        venue.add_concert(concert)  
-        return concert  
+def get_bands_for_venue(venue_title):
+    conn = sqlite3.connect('concerts.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT DISTINCT band_name FROM concerts
+        WHERE venue_title = ?
+    ''', (venue_title,))
+    bands = cursor.fetchall()
+    conn.close()
+    return bands
 
-    def all_introductions(self):
-        return [concert.introduction() for concert in self._concerts]  
-class Venue:
-    def __init__(self, name, city):
-        self._name = name  
-        self._city = city  
-        self._concerts = []  
-        self._bands = set()  
 
-    @property
-    def name(self):
-        return self._name  
+def get_concerts_for_band(band_name):
+    conn = sqlite3.connect('concerts.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT * FROM concerts
+        WHERE band_name = ?
+    ''', (band_name,))
+    concerts = cursor.fetchall()
+    conn.close()
+    return concerts
 
-    @name.setter
-    def name(self, value):
-        if isinstance(value, str) and len(value) > 0:  
-            self._name = value  
-        else:
-            ValueError("Name must be a non-empty string")  
-    @property
-    def city(self):
-        return self._city  
 
-    @city.setter
-    def city(self, value):
-        if isinstance(value, str) and len(value) > 0:  
-            self._city = value  
-        else:
-            ValueError("City must be a non-empty string") 
+def get_venues_for_band(band_name):
+    conn = sqlite3.connect('concerts.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT DISTINCT venue_title FROM concerts
+        WHERE band_name = ?
+    ''', (band_name,))
+    venues = cursor.fetchall()
+    conn.close()
+    return venues
 
-    def add_concert(self, concert):
-        """Add a concert to the venue."""
-        if concert not in self._concerts:
-            self._concerts.append(concert)
-            self.add_band(concert.band)  
 
-    def remove_concert(self, concert):
-        """Remove a concert from the venue."""
-        if concert in self._concerts:
-            self._concerts.remove(concert) 
+def hometown_show(concert_id):
+    conn = sqlite3.connect('concerts.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT bands.hometown, venues.city FROM concerts
+        JOIN bands ON bands.name = concerts.band_name
+        JOIN venues ON venues.title = concerts.venue_title
+        WHERE concerts.id = ?
+    ''', (concert_id,))
+    hometown, city = cursor.fetchone()
+    conn.close()
+    return hometown == city
 
-    def add_band(self, band):
-        """Add a band to the venue."""
-        if band not in self._bands:
-            self._bands.add(band)  
 
-    def remove_band(self, band):
-        """Remove a band from the venue."""
-        if band in self._bands:
-            self._bands.remove(band)  
+def introduction(concert_id):
+    conn = sqlite3.connect('concerts.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT venues.city, bands.name, bands.hometown FROM concerts
+        JOIN bands ON bands.name = concerts.band_name
+        JOIN venues ON venues.title = concerts.venue_title
+        WHERE concerts.id = ?
+    ''', (concert_id,))
+    city, name, hometown = cursor.fetchone()
+    conn.close()
+    return f"Hello {city}!!!!! We are {name} and we're from {hometown}"
 
-    def concerts(self):
-        """Return a list of concerts at the venue."""
-        return self._concerts  
 
-    def bands(self):
-        """Return a list of unique bands that have played at the venue."""
-        return list(self._bands)  
+def play_in_venue(band_name, venue_title, date):
+    conn = sqlite3.connect('concerts.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO concerts (band_name, venue_title, date) VALUES (?, ?, ?)
+    ''', (band_name, venue_title, date))
+    conn.commit()
+    conn.close()
 
-class Concert:
-    all = []  
+def all_introductions(band_name):
+    conn = sqlite3.connect('concerts.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT venues.city, bands.name, bands.hometown FROM concerts
+        JOIN bands ON bands.name = concerts.band_name
+        JOIN venues ON venues.title = concerts.venue_title
+        WHERE bands.name = ?
+    ''', (band_name,))
+    introductions = cursor.fetchall()
+    conn.close()
+    return [f"Hello {city}!!!!! We are {name} and we're from {hometown}" for city, name, hometown in introductions]
 
-    def __init__(self, date, band, venue):
-        self._date = date  
-        self._band = band  
-        self._venue = venue  
-        self._band.add_concert(self) 
-        self._venue.add_concert(self)  
-        Concert.all.append(self)  
+def most_performances():
+    conn = sqlite3.connect('concerts.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT band_name, COUNT(*) as performance_count FROM concerts
+        GROUP BY band_name
+        ORDER BY performance_count DESC
+        LIMIT 1
+    ''')
+    most_performed_band = cursor.fetchone()
+    conn.close()
+    return most_performed_band
 
-    @property
-    def date(self):
-        return self._date  
+def concert_on(venue_title, date):
+    conn = sqlite3.connect('concerts.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT * FROM concerts
+        WHERE venue_title = ? AND date = ?
+        LIMIT 1
+    ''', (venue_title, date))
+    concert = cursor.fetchone()
+    conn.close()
+    return concert
 
-    @date.setter
-    def date(self, value):
-        if isinstance(value, str) and len(value) > 0:  
-            self._date = value  
-        else:
-            ValueError("Date must be a non-empty string.")  
+def most_frequent_band(venue_title):
+    conn = sqlite3.connect('concerts.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT band_name, COUNT(*) as performance_count FROM concerts
+        WHERE venue_title = ?
+        GROUP BY band_name
+        ORDER BY performance_count DESC
+        LIMIT 1
+    ''', (venue_title,))
+    frequent_band = cursor.fetchone()
+    conn.close()
+    return frequent_band
 
-    @property
-    def band(self):
-        return self._band  
-
-    @band.setter
-    def band(self, value):
-        if isinstance(value, Band):
-            self._band = value  
-        else:
-            ValueError("Band must be an instance of Band class.")  
-
-    @property
-    def venue(self):
-        return self._venue  
-
-    @venue.setter
-    def venue(self, value):
-        if isinstance(value, Venue):
-            self._venue = value  
-        else:
-            ValueError("Venue must be an instance of Venue class.")  
-
-    def hometown_show(self):
-        return self._venue.city == self._band.hometown  
-
-    def introduction(self):
-        return f"Hello {self._venue.city}!!!!! We are {self._band.name} and we're from {self._band.hometown}"  
+if __name__ == "__main__":
+    create_database()
+    insert_sample_data()
