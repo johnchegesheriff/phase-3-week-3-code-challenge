@@ -28,8 +28,8 @@ conn.commit()
 
 
 
-cursor.execute("INSERT INTO bands (name, hometown) VALUES (?, ?)", ("Radiohead", "Abingdon-on-Thames"))
-cursor.execute("INSERT INTO bands (name, hometown) VALUES (?, ?)", ("The Beatles", "Liverpool"))
+cursor.execute("INSERT INTO bands (name, hometown) VALUES (?, ?)", ("Uk swindlers", "Switzerland"))
+cursor.execute("INSERT INTO bands (name, hometown) VALUES (?, ?)", ("The Beatles", "Malawi"))
 cursor.execute("INSERT INTO venues (title, city) VALUES (?, ?)", ("Madison Square Garden", "New York City"))
 cursor.execute("INSERT INTO venues (title, city) VALUES (?, ?)", ("The O2 Arena", "London"))
 cursor.execute("INSERT INTO concerts (band_id, venue_id, date) VALUES (?, ?, ?)", (1, 1, "2024-10-26"))
