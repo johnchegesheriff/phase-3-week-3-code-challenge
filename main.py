@@ -42,7 +42,7 @@ def insert_sample_data():
 
     cursor.execute("INSERT INTO bands (name, hometown) VALUES ('The Swindlers', 'Switzerland')")
     cursor.execute("INSERT INTO venues (title, city) VALUES ('Gig Hall', 'New York')")
-    cursor.execute("INSERT INTO concerts (band_name, venue_title, date) VALUES ('The Swindlers', 'Gig Hall', '2024-09-01')")
+    cursor.execute("INSERT INTO concerts (band_name, venue_title, date) VALUES ('The Swindlers', 'Gig Hall', '21-06-2024')")
 
     conn.commit()
     conn.close()
